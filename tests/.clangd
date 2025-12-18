@@ -1,4 +1,4 @@
 CompileFlags:
   Add:
-    - -nostdinc
+    - -nostdinc++
     - -I../include

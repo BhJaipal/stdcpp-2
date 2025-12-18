@@ -1,16 +1,9 @@
 SHELL = /bin/bash
-FLAGS = -nostartfiles -nostdinc -g -fPIC -Iinclude -z noexecstack -ffreestanding
-CFLAGS = -Wno-implicit-function-declaration
+FLAGS = -g -fPIC -Iinclude -z noexecstack -ffreestanding
 
-SRC := $(wildcard ./src/*.c)
-SRCCXX := $(wildcard ./src/c++/*.cpp)
-
-START := ./start/libc-start.c
-LIBC = myc
-LIBCXX = stdc++
-CC ?= gcc
+LIBCXX = stdc++2
 CXX := $(wildcard ./src/c++/*.cpp)
-CXXFLAGS = -Iinclude/c++ -nolibc -nostdinc++ -nostdlib++
+FLAGS = -Iinclude -nostdinc++ -nostdlib++
 
 define MAIN_FN
 $(filter-out $1,$(MAKECMDGOALS))
@@ -24,14 +17,11 @@ $(basename $(subst src,build,$1)).o
 endef
 
 
-C_OBJ := $(foreach src, $(SRC), $(call TO_OBJ, $(src)))
-CXX_OBJ := $(foreach src, $(SRC), $(call TO_OBJ, $(src))) $(foreach src, $(SRCCXX), $(call TO_OBJ, $(src)))
-
-TESTS := $(foreach test,$(wildcard tests/*.c), $(subst .c,,$(subst tests/,,$(test))))
+TESTS := $(foreach test,$(wildcard tests/*.cpp), $(subst .cpp,,$(subst tests/,,$(test))))
 
 .PHONY: bin/% bin-src/%.c examples/%.c
 bin/%:
-	gcc $(FLAGS) $(CFLAGS) $(subst bin,bin-src,$@).c lib/lib$(LIBC).so $(START) -o $@
+	g++ $(FLAGS) $(subst bin,bin-src,$@).c lib/lib$(LIBC).so $(START) -o $@
 
 .ONESHELL:
 bins:
@@ -40,37 +30,19 @@ bins:
 	done
 
 bin-src/%:
-	gcc $(FLAGS) $(CFLAGS) $@ lib/lib$(LIBC).so $(START) -o $(subst .c,, $(subst -src,,$@))
-
-runpp:
-	g++ $(FLAGS) $(CXXFLAGS) $(call MAIN_FN, $@) lib/lib$(LIBCXX).so $(START)pp
-
-runpp-static:
-	g++ $(FLAGS) $(CXXFLAGS) $(call MAIN_FN, $@) -static lib/lib$(LIBCXX).a $(START)pp
+	g++ $(FLAGS) $@ lib/lib$(LIBC).so $(START) -o $(subst .c,, $(subst -src,,$@))
 
 run:
-	gcc $(FLAGS) $(CFLAGS) $(call MAIN_FN, $@) lib/lib$(LIBC).so $(START)
+	g++ $(FLAGS) $(call MAIN_FN, $@) build/lib$(LIBCXX).so -Wl,-rpath,./build
 
 run-static:
-	gcc $(FLAGS) $(CFLAGS) $(call MAIN_FN, $@) -static lib/lib$(LIBC).a $(START)
-
-examples/%.c:
-	$(CC) $(FLAGS) $(CFLAGS) $@ lib/lib$(LIBC).so $(START)
-
-build/%.o: src/%.c
-	$(CC) $(FLAGS) $(CFLAGS) -o $@ -c $(call TO_SRC, $@)
-
-build/c++/%.o: src/c++/%.cpp
-	g++ $(FLAGS) $(CXXFLAGS) $(subst build,src,$(basename $@)).cpp -c -o $@
-
-buildcxx:
-	$(foreach src, $(SRCCXX), make $(subst src,build,$(basename $(src))).o;)
+	g++ $(FLAGS) $(call MAIN_FN, $@) -static build/lib$(LIBCXX).a -Wl,-rpath,./build
 
 .ONESHELL:
 test-all:
 	failed=;
 	for item in $(TESTS); do
-		gcc $(FLAGS) $(CFLAGS) test.c tests/$$item.c lib/lib$(LIBC).so $(START) -o $$item-test.exe;
+		g++ $(FLAGS) test.cpp tests/$$item.cpp build/lib$(LIBCXX).so -o $$item-test.exe -Wl,-rpath,./build;
 		if [[ $$? == 1 ]]; then failed=1; fi;
 	done;
 	for item in $(TESTS); do
@@ -83,24 +55,17 @@ test-all:
 
 .ONESHELL:
 test:
-	gcc $(FLAGS) $(CFLAGS) test.c tests/$(TEST).c lib/lib$(LIBC).so $(START) -o $(TEST)-test.exe
+	g++ $(FLAGS) test.cpp tests/$(TEST).cpp build/lib$(LIBCXX).so -g -o $(TEST)-test.exe -Wl,-rpath,./build
 	./$(TEST)-test.exe
 
-.ONESHELL:
+new:
+	meson setup build
+
+reconfig:
+	meson setup --reconfigure build
+
 compile:
-	$(foreach s, $(C_OBJ), make $(s);)
-	echo -e "\e[92mCompiled all done source files\e[0m"
-
-shared: $(C_OBJ)
-	$(CC) $(FLAGS) $(CFLAGS) $(C_OBJ) -shared -o lib/lib$(LIBC).so
-	echo -e "\e[92mBuilt done lib$(LIBC).so successfully\e[0m"
-
-stdcxx: $(CXX_OBJ) shared
-	g++ $(FLAGS) $(CXXFLAGS) $(CXX_OBJ) lib/lib$(LIBC).so -shared -o lib/lib$(LIBCXX).so
-
-ar: $(C_OBJ)
-	ar rcs lib/lib$(LIBC).a $(C_OBJ)
-	echo -e "\e[92mBuilt done lib$(LIBC).a successfully\e[0m"
+	meson compile -C build
 
 clean:
 	rm a.out
@@ -108,4 +73,3 @@ clean:
 
 clean-build:
 	rm build/*.o
-	rm build/c++/*.o
