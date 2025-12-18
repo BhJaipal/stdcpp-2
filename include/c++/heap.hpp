@@ -2,7 +2,6 @@
 #include "libc.hpp"
 
 namespace libc {
-
 	typedef enum {
 		PROT_READ = 0x1,		/* Page can be read.  */
 		PROT_WRITE= 0x2,		/* Page can be written.  */

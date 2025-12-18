@@ -89,14 +89,26 @@ int main(int argc, char **argv) {
 				goto next;
 
 			Stat statb;
-			if (!strcmp(dir, "."))
-				stat(d->d_name, &statb);
-			else {
-				char full_path[100] = "";
-				strcpy(full_path, dir);
-				strcat(full_path, "/");
-				strcat(full_path, d->d_name);
-				stat(full_path, &statb);
+			if (d->d_type == DT_LNK) {
+				if (!strcmp(dir, "."))
+					lstat(d->d_name, &statb);
+				else {
+					char full_path[100] = "";
+					strcpy(full_path, dir);
+					strcat(full_path, "/");
+					strcat(full_path, d->d_name);
+					lstat(full_path, &statb);
+				}
+			} else {
+				if (!strcmp(dir, "."))
+					stat(d->d_name, &statb);
+				else {
+					char full_path[100] = "";
+					strcpy(full_path, dir);
+					strcat(full_path, "/");
+					strcat(full_path, d->d_name);
+					stat(full_path, &statb);
+				}
 			}
 			int permissions = statb.st_mode;
 			permissions &= 0777;
@@ -215,7 +227,7 @@ int main(int argc, char **argv) {
 					printf("\e[1;95m");
 					break;
 			}
-			if (d->d_type != DT_DIR && other & 1) printf("\e[1;92m");
+			if (d->d_type != DT_DIR && d->d_type != DT_LNK && other & 1) printf("\e[1;92m");
 			printf("%s", d->d_name);
 			write(1, "\e[0m", 4);
 			if (!(flags & FULL_DETAIL)) {
