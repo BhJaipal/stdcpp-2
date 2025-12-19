@@ -1,5 +1,5 @@
 #pragma once
 
 namespace libc {
-#include "../string.h"
+#include <string.h>
 }

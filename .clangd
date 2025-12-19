@@ -1,6 +1,7 @@
 CompileFlags:
   Add:
     - -nostdinc++
+    - -Iinclude
   Remove:
     - -I /usr/include/c++/13
     - -I /usr/include/c++/13/*/

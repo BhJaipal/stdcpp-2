@@ -1,11 +1,6 @@
 #pragma once
 
 #include "file.hpp"
-namespace libc::net {
-	extern "C" {
-#include <sys/socket.h>
-	}
-}
 
 namespace std::net {
 	class Socket : public std::io::File {

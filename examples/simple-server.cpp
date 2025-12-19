@@ -1,9 +1,10 @@
 #include <file.hpp>
 #include <socket.hpp>
+#include <sys/socket.h>
 
 
 int main (int argc, char *argv[], char *envp[]) {
-	std::net::Socket server(PF_INET, libc::net::SOCK_STREAM, PF_UNSPEC);
+	std::net::Socket server(PF_INET, SOCK_STREAM, PF_UNSPEC);
 	if (server.bind(5173) < 0) {
 		std::io::stdout().write("Failed to bind port to socket\n");
 		return 1;

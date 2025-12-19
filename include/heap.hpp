@@ -32,8 +32,8 @@ public:
 		prot = prot_;
 		flags = flags_;
 		fd = fd_;
-		head = NULL;
-		end = NULL;
+		head = (Ptr *)NULL;
+		end = (Ptr *)NULL;
 		node_size = sizeof(Ptr);
 	}
 
