@@ -55,9 +55,10 @@ public:
 
 
 #define IS_NOT_NULL(value) \
-	if (value == null || (size_t)value == (size_t)-1) {\
+	if (value == NULL || (size_t)value == (size_t)-1) {\
 		printf("\t\e[91m[" #value ".is_not_null()]\e[0m: failed\n");\
 		return false;						\
 	} else\
 		printf("\t\e[92m[" #value ".is_not_null()]\e[0m: passed\n");\
 
+class DummyTest {};
