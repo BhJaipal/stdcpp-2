@@ -19,7 +19,6 @@ endef
 
 TESTS := $(foreach test,$(wildcard tests/*.cpp), $(subst .cpp,,$(subst tests/,,$(test))))
 
-.PHONY: bin/% bin-src/%.c examples/%.c
 bin/%:
 	g++ $(FLAGS) $(subst bin,bin-src,$@).c lib/lib$(LIBC).so $(START) -o $@
 
@@ -38,25 +37,25 @@ run:
 run-static:
 	g++ $(FLAGS) $(call MAIN_FN, $@) -static build/lib$(LIBCXX).a -Wl,-rpath,./build
 
+retest:
+	for item in $(TESTS); do
+		g++ $(FLAGS) test.cpp tests/$$item.cpp build/lib$(LIBCXX).so -o build/$$item -Wl,-rpath,./build;
+	done;
+
 .ONESHELL:
 test-all:
 	failed=;
 	for item in $(TESTS); do
-		g++ $(FLAGS) test.cpp tests/$$item.cpp build/lib$(LIBCXX).so -o $$item-test.exe -Wl,-rpath,./build;
-		if [[ $$? == 1 ]]; then failed=1; fi;
-	done;
-	for item in $(TESTS); do
-		./$$item-test.exe;
-		if [[ $$? == 1 ]]; then failed=1; fi;
+		build/$$item;
+		if [[ $$? != 0 ]]; then failed=1; fi;
 	done;
 	if [[ $$failed == 1 ]]; then echo -e "\e[91mSome Test Failed\e[0m";
 	else echo -e "\e[92mAll Test Passed\e[0m";
 	fi
+	meson test -C build
 
-.ONESHELL:
 test:
-	g++ $(FLAGS) test.cpp tests/$(TEST).cpp build/lib$(LIBCXX).so -g -o $(TEST)-test.exe -Wl,-rpath,./build
-	./$(TEST)-test.exe
+	meson test -C build
 
 new:
 	meson setup build
@@ -73,3 +72,8 @@ clean:
 
 clean-build:
 	rm build/*.o
+
+.ONESHELL:
+meson-test:
+	cd build
+	meson test

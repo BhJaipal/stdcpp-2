@@ -1,11 +1,12 @@
+extern "C" {
 #include <sys/wait.h>
+#include <stdio.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <string.h>
-#include <file.h>
-#include <io.h>
+}
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[], char *envp[]) {
 	if (argc < 2) {
 		while (1) {
 			char buff[200] = "";
@@ -17,11 +18,11 @@ int main(int argc, char *argv[]) {
 
 			char *argv_[10];
 			for (int i = 0; i < 10; i++) {
-				argv_[i] = mmap(0, 30, PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+				argv_[i] = (char*)mmap(0, 30, PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
 			}
 
-			int len = 4;
-			strcat(argv_[0], "bin/");
+			int len = 6;
+			strcat(argv_[0], "build/");
 			int i = 0;
 			while (buff[i]) {
 				if (buff[i] == ' ') {
@@ -42,7 +43,7 @@ int main(int argc, char *argv[]) {
 			int status;
 			argv_[argc_+1] = 0;
 
-			if (!strcmp(argv_[0], "/bin/exit")) {
+			if (!strcmp(argv_[0], "build/exit")) {
 				if (argc_ == 0) return 0;
 				return *argv_[1] - 0x30;
 			}
@@ -50,13 +51,13 @@ int main(int argc, char *argv[]) {
 			int out = 0;
 			int id = fork();
 			if (id == 0) {
-				out = execve(argv_[0], (const char *const*)argv_, 0);
+				out = execve(argv_[0], argv_, envp);
 				if (out == -2) {
 					printf("command not found %s\n", argv_[0]);
 					printf("\e[91m[EXIT: 127]\e[0m\n");
-					exit(127);
+					_exit(127);
 				}
-				exit(out);
+				_exit(out);
 			} else {
 				if (out != 0)
 					printf("\e[91m[EXIT: %i]\e[0m\n", out);

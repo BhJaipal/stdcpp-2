@@ -74,3 +74,4 @@ void Heap::destroy() {
 		libc::munmap(prev, heap->node_size);
 	}
 }
+void *__gxx_personality_v0 = NULL;

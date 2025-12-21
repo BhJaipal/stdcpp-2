@@ -45,9 +45,12 @@ public:
 	void set_auto_defrag(char auto_defrag) {
 		auto_defrag_ = auto_defrag;
 	}
+	template<class T> T* alloc(size_t size) {
+		return (T *)alloc_r(size);
+	}
 
 	/** @brief allocate memory in arena */
-	void *alloc(size_t size);
+	void *alloc_r(size_t size);
 
 	void dealloc(void *ptr);
 

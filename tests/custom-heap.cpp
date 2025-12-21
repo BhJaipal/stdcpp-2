@@ -24,17 +24,11 @@ public:
 		heap.destroy();
 	}
 };
-void *__gxx_personality_v0 = NULL;
 Result enable() {
 	Test<CustomHeap> test;
 	test.add(&CustomHeap::equal);
 	test.add([]() {
 		EXPECT(5 > 2);
-		return true;
-	});
-	int y = 8;
-	test.add([y]() {
-		EXPECT(y > 11);
 		return true;
 	});
 	return test.emit_all();

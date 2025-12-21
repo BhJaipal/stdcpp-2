@@ -1,11 +1,11 @@
-#include <fs.h>
+#include <fs.hpp>
+#include <stdlib.h>
 #include <unistd.h>
-#include <c-impl.h>
+#include <fcntl.h>
 #include <malloc.h>
 #include <string.h>
-#include <io.h>
-#include <file.h>
 #include <sys/stat.h>
+#include <sys/dir.h>
 
 #define BUF_SIZE 1024
 
@@ -47,11 +47,11 @@ int main(int argc, char **argv) {
 	int                  fd;
 	char                 buf[BUF_SIZE];
 	long                 nread;
-	linux_dirent64 *d;
+	struct dirent64 *d;
 	size_t total_size = 0;
 
 	char dir[100] = ".";
-	char flags;
+	char flags = 0;
 	if (argc != 1) {
 		if (argv[1][0] == '-') {
 			int i = 1;
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 	}
 	int i = 0;
 	for (;;) {
-		nread = getdents64(fd, (linux_dirent64*)buf, BUF_SIZE);
+		nread = getdents64(fd, (dirent64*)buf, BUF_SIZE);
 		if (nread == -1)
 			break;
 
@@ -84,11 +84,13 @@ int main(int argc, char **argv) {
 			break;
 
 		for (size_t bpos = 0; bpos < nread;) {
-			d = (linux_dirent64*)(buf + bpos);
-			if (d->d_name[0] == '.' && !(flags & HIDDEN_ENABLE))
-				goto next;
+			d = (dirent64*)(buf + bpos);
+			if (d->d_name[0] == '.' && !(flags & HIDDEN_ENABLE)) {
+				bpos += d->d_reclen;
+				continue;
+			}
 
-			Stat statb;
+			struct stat statb;
 			if (d->d_type == DT_LNK) {
 				if (!strcmp(dir, "."))
 					lstat(d->d_name, &statb);
@@ -118,29 +120,20 @@ int main(int argc, char **argv) {
 			int other = permissions & 07;
 			if (flags & FULL_DETAIL) {
 				switch (d->d_type) {
-					case DT_DIR:
-						printf("d");
-						break;
-					case DT_CHR:
-						printf("c");
-						break;
-					case DT_LNK:
-						printf("s");
-						break;
-					default:
-						printf("-");
-						break;
+					case DT_DIR: printf("d"); break;
+					case DT_CHR: printf("c"); break;
+					case DT_LNK: printf("s"); break;
+					default:     printf("-"); break;
 				}
 
 				print_permission(root);
 				print_permission(group);
 				print_permission(other);
-				if (statb.st_nlink / 100)
-					printf(" %lu ", statb.st_nlink);
-				else if (statb.st_nlink / 10)
-					printf("  %lu ", statb.st_nlink);
-				else
-					printf("   %lu ", statb.st_nlink);
+
+				if (statb.st_nlink / 100)     printf(" %lu ", statb.st_nlink);
+				else if (statb.st_nlink / 10) printf("  %lu ", statb.st_nlink);
+				else                          printf("   %lu ", statb.st_nlink);
+
 				int passwd = open("/etc/passwd", O_RDONLY);
 
 				char uid[22];
@@ -239,7 +232,6 @@ int main(int argc, char **argv) {
 				i++;
 			}
 			if (flags & FULL_DETAIL) printf("\n");
-next:
 			bpos += d->d_reclen;
 		}
 	}

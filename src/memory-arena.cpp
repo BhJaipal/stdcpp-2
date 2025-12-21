@@ -30,7 +30,7 @@ void MemoryArena::heap_as_default() {
 	flags = MAP_ANONYMOUS|MAP_PRIVATE;
 }
 
-void *MemoryArena::alloc(size_t size) {
+void *MemoryArena::alloc_r(size_t size) {
 	if (head->flags < 3) {
 		pointer_defaults_on(head);
 		head->size = size;
